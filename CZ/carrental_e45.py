@@ -23,8 +23,9 @@ def cmpt_P_and_R(lambda_rental,lambda_return):
     for n in nCM:
         tmp = float(0)
         for n_rental in range(0,1+10*lambda_rental):
-            for n_return in range(0,1+10*lambda_return):
-                tmp = tmp + 10*min(n,n_rental)*poisspdf(n_rental, lambda_rental)*poisspdf(n_return,lambda_return)
+            tmp = tmp + 10*min(n,n_rental)*poisspdf(n_rental, lambda_rental)
+#            for n_return in range(0,1+10*lambda_return):
+#                tmp = tmp + 10*min(n,n_rental)*poisspdf(n_rental, lambda_rental)*poisspdf(n_return,lambda_return)
         R[n] = tmp
         
     P = [[0 for i in range(0,max_n_cars+1)] for j in range(0,len(nCM))]
@@ -155,7 +156,7 @@ def policy_improvement(pol_pi,emp_pol_pi,V,Ra,Pa,Rb,Pb):
             maxPosAct = posActionsInState1[imax1]
         
         if(maxPosAct!=b or useEmpMax!=b_emp):
-            policyStable = 0
+            policyStable = False
             pol_pi[na][nb] = maxPosAct
             emp_pol_pi[na][nb] = useEmpMax
     return pol_pi,emp_pol_pi,policyStable

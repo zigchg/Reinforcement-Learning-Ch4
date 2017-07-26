@@ -23,8 +23,9 @@ def cmpt_P_and_R(lambda_rental,lambda_return):
     for n in nCM:
         tmp = float(0)
         for n_rental in range(0,1+10*lambda_rental):
-            for n_return in range(0,1+10*lambda_return):
-                tmp = tmp + 10*min(n,n_rental)*poisspdf(n_rental, lambda_rental)*poisspdf(n_return,lambda_return)
+            tmp = tmp + 10*min(n,n_rental)*poisspdf(n_rental, lambda_rental)
+#            for n_return in range(0,1+10*lambda_return):
+#                tmp = tmp + 10*min(n,n_rental)*poisspdf(n_rental, lambda_rental)*poisspdf(n_return,lambda_return)
         R[n] = tmp
         
     P = [[0 for i in range(0,max_n_cars+1)] for j in range(0,len(nCM))]
@@ -44,9 +45,11 @@ def ind2sub(d,s):
     y = (s-x)/(d+1)
     return int(x), int(y)
 
-def rhs_state_value_bellman(na,nb,ntrans,useEmp,V,Ra,Pa,Rb,Pb):
+#def rhs_state_value_bellman(na,nb,ntrans,useEmp,V,Ra,Pa,Rb,Pb):
+def rhs_state_value_bellman(na,nb,ntrans,V,Ra,Pa,Rb,Pb):
     # restrict this action: 
-    ntrans_total = ntrans+useEmp
+    # ntrans_total = ntrans+useEmp
+    ntrans_total = ntrans
     ntrans_total = max(-nb,min(ntrans_total,na))
     ntrans_total = max(-max_num_cars_can_transfer,min(+max_num_cars_can_transfer,ntrans_total))
     
@@ -77,7 +80,7 @@ def rhs_state_value_bellman(na,nb,ntrans,useEmp,V,Ra,Pa,Rb,Pb):
                 sys.exit()
     return v_tmp
 
-def policy_evaluation(V,pol_pi,emp_pol_pi,Ra,Pa,Rb,Pb):
+def policy_evaluation(V,pol_pi,Ra,Pa,Rb,Pb):
     n_states = (max_n_cars+1)**2
     MAX_N_ITERS = 100
 #    iterCnt = 0
@@ -94,15 +97,16 @@ def policy_evaluation(V,pol_pi,emp_pol_pi,Ra,Pa,Rb,Pb):
             v = V[na][nb]
             # get transfer numbers
             ntrans = pol_pi[na][nb]
-            useEmp = emp_pol_pi[na][nb]
+            # useEmp = emp_pol_pi[na][nb]
             
-            V[na][nb] = rhs_state_value_bellman(na,nb,ntrans,useEmp,V,Ra,Pa,Rb,Pb)
+            V[na][nb] = rhs_state_value_bellman(na,nb,ntrans,V,Ra,Pa,Rb,Pb)
             
             delta = max(delta, abs(v-V[na][nb]))
 #        iterCnt = iterCnt + 1
     return V
 
-def policy_improvement(pol_pi,emp_pol_pi,V,Ra,Pa,Rb,Pb):
+#def policy_improvement(pol_pi,emp_pol_pi,V,Ra,Pa,Rb,Pb):
+def policy_improvement(pol_pi,V,Ra,Pa,Rb,Pb):
     n_states = (max_n_cars+1)**2
     policyStable = True
     
@@ -112,9 +116,9 @@ def policy_improvement(pol_pi,emp_pol_pi,V,Ra,Pa,Rb,Pb):
         
         # policy for this state
         b = pol_pi[na][nb]
-        b_emp = emp_pol_pi[na][nb]
+        # b_emp = emp_pol_pi[na][nb]
         
-        useEmp = 0
+        # useEmp = 0
         posA = min(na,max_num_cars_can_transfer)
         posB = min(nb,max_num_cars_can_transfer)
         
@@ -124,41 +128,44 @@ def policy_improvement(pol_pi,emp_pol_pi,V,Ra,Pa,Rb,Pb):
         
         for ti in range(0,npa):
             ntrans = posActionsInState0[ti]
-            bm = rhs_state_value_bellman(na,nb,ntrans,useEmp,V,Ra,Pa,Rb,Pb)
+            #bm = rhs_state_value_bellman(na,nb,ntrans,useEmp,V,Ra,Pa,Rb,Pb)
+            bm = rhs_state_value_bellman(na,nb,ntrans,V,Ra,Pa,Rb,Pb)
             Q0.append(bm)
             
-        useEmp = 1
-        posA = min(max(na-1,0),max_num_cars_can_transfer)
-        posB = min(nb,max_num_cars_can_transfer)
-        
-        posActionsInState1 = range(-posB,posA+1)
-        npa = len(posActionsInState1)
-        Q1 = []
-        
-        for ti in range(0,npa):
-            ntrans = posActionsInState1[ti]
-            bm = rhs_state_value_bellman(na,nb,ntrans,useEmp,V,Ra,Pa,Rb,Pb)
-            Q1.append(bm)
-            
+#        useEmp = 1
+#        posA = min(max(na-1,0),max_num_cars_can_transfer)
+#        posB = min(nb,max_num_cars_can_transfer)
+#        
+#        posActionsInState1 = range(-posB,posA+1)
+#        npa = len(posActionsInState1)
+#        Q1 = []
+#        
+#        for ti in range(0,npa):
+#            ntrans = posActionsInState1[ti]
+#            bm = rhs_state_value_bellman(na,nb,ntrans,useEmp,V,Ra,Pa,Rb,Pb)
+#            Q1.append(bm)
+#            
         max0 = max(Q0)
         imax0 = Q0.index(max0)
         
-        max1 = max(Q1)
-        imax1 = Q1.index(max1)
+#        max1 = max(Q1)
+#        imax1 = Q1.index(max1)
         
-        dum = max(max0,max1)
-        useEmpMax = [max0,max1].index(dum)
+#        dum = max(max0,max1)
+#        useEmpMax = [max0,max1].index(dum)
+
         
-        if(useEmpMax==0):
-            maxPosAct = posActionsInState0[imax0]
-        else:
-            maxPosAct = posActionsInState1[imax1]
+#        if(useEmpMax==0):
+        maxPosAct = posActionsInState0[imax0]
+#        else:
+#            maxPosAct = posActionsInState1[imax1]
         
-        if(maxPosAct!=b or useEmpMax!=b_emp):
-            policyStable = 0
+        if(maxPosAct!=b): #or useEmpMax!=b_emp):
+            policyStable = False
             pol_pi[na][nb] = maxPosAct
-            emp_pol_pi[na][nb] = useEmpMax
-    return pol_pi,emp_pol_pi,policyStable
+#            emp_pol_pi[na][nb] = useEmpMax
+#    return pol_pi,emp_pol_pi,policyStable
+    return pol_pi,policyStable
             
             
 # Main method
@@ -172,15 +179,16 @@ V = [[0 for i in range(0,max_n_cars+1)] for j in range(0,max_n_cars+1)]
 
 # initial policy
 pol_pi = [[0 for i in range(0,max_n_cars+1)] for j in range(0,max_n_cars+1)]
-emp_pol_pi = [[0 for i in range(0,max_n_cars+1)] for j in range(0,max_n_cars+1)]
+# emp_pol_pi = [[0 for i in range(0,max_n_cars+1)] for j in range(0,max_n_cars+1)]
 
 policyStable = False
 # iterNum = 0
 while(not policyStable):
     # evaluate the state-value function under this policy:
-    V = policy_evaluation(V,pol_pi,emp_pol_pi,Ra,Pa,Rb,Pb)
+    V = policy_evaluation(V,pol_pi,Ra,Pa,Rb,Pb)
     # compute an improved policy using the most recent as a base:
-    pol_pi, emp_pol_pi, policyStable = policy_improvement(pol_pi,emp_pol_pi,V,Ra,Pa,Rb,Pb)
+    # pol_pi, emp_pol_pi, policyStable = policy_improvement(pol_pi,emp_pol_pi,V,Ra,Pa,Rb,Pb)
+    pol_pi, policyStable = policy_improvement(pol_pi,V,Ra,Pa,Rb,Pb)
 
 #    iterNum = iterNum + 1
 #    if(iterNum==2):
