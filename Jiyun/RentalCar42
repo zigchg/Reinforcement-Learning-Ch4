@@ -42,27 +42,54 @@ public class CarRental {
 
 							String key1 = car1 + "_" + car2 + ":" + action
 									+ ":" + car1End + "_" + car2End;
-
+							
+							//System.out.println("new macthed key:" + key1);
+							
 							if (p_map.containsKey(key1)) {
+								//System.out.println("new macthed key:" + key1);
 								HashMap<Integer, Double> tmp = p_map.get(key1);
 								Iterator it = tmp.entrySet().iterator();
 								while (it.hasNext()) {
 									Map.Entry pair = (Map.Entry) it.next();
-									v_new += (Double) pair.getValue()
-											* ((Integer) pair.getKey() + g
-													* value[car1End][car2End]);
-									it.remove(); // avoids a ConcurrentModificationException
+									//System.out.println("new macthed key:" + pair.getKey() + ":" + pair.getValue());
+									v_new += ((Double) pair.getValue()) * ((Integer) pair.getKey() + g * value[car1End][car2End]);
+									//it.remove(); // avoids a ConcurrentModificationException
 								}
 							}
+							
+							//System.out.println("new macthed v_new:" + v_new);
 						}
 					}
 
+					//System.out.println(car1 + "_" + car2 + " new updated value:" + v_new);
 					value[car1][car2] = v_new;
 					diff = Math.max(diff, Math.abs(v_new - v));
 				}
 			}
+			
+			//outValue();
+			
 			ct++;
-		} while (diff > 0.001 ); //&& ct <= 100
+			//System.out.println("diff is:" + diff);
+		} while (diff > 0.00000001 ); //&& ct <= 100
+	}
+	
+	public void checkPSA(){
+		//HashMap<String, HashMap<Integer, Double>>
+		Iterator it = p_map.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			String key = (String) pair.getKey();
+			HashMap<Integer, Double> tmp = (HashMap<Integer, Double>) pair.getValue();
+			
+			Iterator it1 = tmp.entrySet().iterator();
+			while (it1.hasNext()) {
+				Map.Entry pair1 = (Map.Entry) it1.next();
+				System.out.println(key + ":" + pair1.getKey() + "," + pair1.getValue());
+				//it1.remove(); // avoids a ConcurrentModificationException
+			}
+			//it.remove(); // avoids a ConcurrentModificationException
+		}
 	}
 	
 	public void checkPR(){
@@ -79,7 +106,7 @@ public class CarRental {
 			while (it1.hasNext()) {
 				Map.Entry pair1 = (Map.Entry) it1.next();
 				s += (Double) pair1.getValue();
-				it1.remove(); // avoids a ConcurrentModificationException
+				//it1.remove(); // avoids a ConcurrentModificationException
 			}
 			
 			String [] data = key.split(":");
@@ -91,14 +118,14 @@ public class CarRental {
 				ck.put(key_new, s);
 			}
 			
-			it.remove(); // avoids a ConcurrentModificationException
+			//it.remove(); // avoids a ConcurrentModificationException
 		}
 		
 		Iterator it2 = ck.entrySet().iterator();
 		while (it2.hasNext()) {
 			Map.Entry pair = (Map.Entry) it2.next();
 			System.out.println(pair.getKey() + ":" + pair.getValue());
-			it2.remove(); // avoids a ConcurrentModificationException
+			//it2.remove(); // avoids a ConcurrentModificationException
 		}
 	}
 
@@ -109,11 +136,18 @@ public class CarRental {
 			for (int car2 = 0; car2 <= 20; car2++) {
 				
 				int action_old = policy[car1][car2];
-				int action_new = -10;
-				double v_max = -10000;
+				int action_new = action_old;
+				double v_max = Double.MIN_VALUE;
 
 				for (int i = 0; i < actions.length; i++) {
 					int action = actions[i];
+					
+					int car1_new = car1 - action;
+					int car2_new = car2 + action;
+					
+					if (car1_new < 0 || car2_new < 0){
+						continue;
+					}
 
 					double v_new = 0;
 					for (int car1End = 0; car1End <= 20; car1End++) {
@@ -123,6 +157,7 @@ public class CarRental {
 									+ ":" + car1End + "_" + car2End;
 
 							if (p_map.containsKey(key1)) {
+								//System.out.println("find match:" + key1);
 								HashMap<Integer, Double> tmp = p_map.get(key1);
 								Iterator it = tmp.entrySet().iterator();
 								while (it.hasNext()) {
@@ -131,11 +166,12 @@ public class CarRental {
 											* ((Integer) pair.getKey() + g
 													* value[car1End][car2End]);
 
-									it.remove(); // avoids a
+									//it.remove(); // avoids a
 								}
 							}
 						}
 					}
+					//System.out.println("new value:" + v_new);
 
 					if (v_new > v_max) {
 						v_max = v_new;
@@ -154,7 +190,6 @@ public class CarRental {
 	}
 
 	public static void main(String[] args) {
-
 		// TODO Auto-generated method stub
 		CarRental instance = new CarRental();
 		
@@ -163,6 +198,7 @@ public class CarRental {
 		instance.outPolicy();
 		
 		//instance.checkPR();
+		//instance.checkPSA();
 
 		boolean stable = false;
 		int count = 0;
@@ -171,8 +207,12 @@ public class CarRental {
 			count++;
 			
 			instance.policyEvaluate();
+			
+			System.out.println("evaluation over.");
 
 			stable = instance.policyUpdate();
+			
+			System.out.println("update over.");
 
 			if (count <= 4) {
 				System.out.println("iteration " + count);
@@ -195,6 +235,7 @@ public class CarRental {
 	
 	public void p_s_a() {
 		for (int car1 = 0; car1 <= 20; car1++) {
+			//System.out.println(car1  + " initiate.");
 			for (int car2 = 0; car2 <= 20; car2++) {
 				//System.out.println(car1 + ":" + car2 + " initiate.");
 				for (int i = 0; i < actions.length; i++) {
@@ -204,8 +245,18 @@ public class CarRental {
 					int car1_new = car1 - action;
 					int car2_new = car2 + action;
 
-					if (car1_new < 0 || car2_new < 0)
-						continue; // not a feasible action
+					/*if (car1_new < 0){
+						car2_new += car1_new;
+						car1_new = 0;
+					}else{
+						if(car2_new < 0){
+							car1_new += car2_new;
+							car2_new = 0;
+						}
+					}*/
+					if (car1_new < 0 || car2_new < 0){
+						continue;
+					}
 
 					if (car1_new > 20)
 						car1_new = 20;
@@ -217,8 +268,8 @@ public class CarRental {
 					double p_car1Rent = 0;
 					do {
 						p_car1Rent = possionRent(1, car1Rent);
+						
 						int car1RTN = 0;
-
 						double p_car1RTN = 0;
 						do {
 							p_car1RTN = possionRTN(1, car1RTN);
@@ -232,6 +283,7 @@ public class CarRental {
 							double p_car2Rent = 0;
 							do {
 								p_car2Rent = possionRent(2, car2Rent);
+								
 								int car2RTN = 0;
 								double p_car2RTN = 0;
 								do {
@@ -242,8 +294,15 @@ public class CarRental {
 									if(car2End > 20) car2End = 20;
 									double p_car2 = p_car2Rent * p_car2RTN;
 
-									int reward = 10 * (car1Rent + car2Rent) - 2
-											* Math.abs(action);
+									int reward = 10 * (Math.min(car1Rent,car1_new) + Math.min(car2Rent,car2_new));
+									int r_tmp=0;
+									/*if(action >= 0){
+										r_tmp = 2*Math.min(car1, action);
+									}else{
+										r_tmp = 2*Math.min(car2, -action);
+									}*/
+									r_tmp = 2* action;
+									reward -= r_tmp;
 
 									String key1 = car1 + "_" + car2 + ":"
 											+ action + ":" + car1End + "_"
@@ -358,6 +417,20 @@ public class CarRental {
 		for (int car1 = 20; car1 >= 0; car1--) {
 			for (int car2 = 0; car2 <= 20; car2++) {
 				System.out.print(policy[car1][car2] + "\t");
+			}
+
+			System.out.println("");
+		}
+		System.out.println("");
+	}
+	
+	public void outValue() {
+		
+		System.out.println("Values:");
+
+		for (int car1 = 20; car1 >= 0; car1--) {
+			for (int car2 = 0; car2 <= 20; car2++) {
+				System.out.print(value[car1][car2] + "\t");
 			}
 
 			System.out.println("");
